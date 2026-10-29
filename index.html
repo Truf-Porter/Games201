@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Games201 - Arcade Hub</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-hover: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 2.5rem 2rem 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .game-card {
+            background-color: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-card:hover {
+            background-color: var(--card-hover);
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 15px -3px var(--accent-glow);
+        }
+
+        .game-logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #0284c7, #4f46e5);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .game-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .loading, .error {
+            text-align: center;
+            color: var(--text-secondary);
+            grid-column: 1 / -1;
+            font-size: 1.2rem;
+            padding: 3rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Games201</h1>
+    </header>
+
+    <main>
+        <div id="game-grid" class="grid">
+            <div class="loading">Loading games...</div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2026 Games201. All rights reserved.
+    </footer>
+
+    <script>
+        const BASE_WEBSITE_URL = window.location.origin;
+        
+        async function loadGames() {
+            const gridContainer = document.getElementById('game-grid');
+            
+            try {
+                const response = await fetch('./games/');
+                if (!response.ok) throw new Error('Could not access the games folder.');
+                
+                const htmlText = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const anchors = doc.querySelectorAll('a');
+                
+                let gameFiles = [];
+                anchors.forEach(a => {
+                    const href = a.getAttribute('href');
+                    if (href && href !== '../' && href !== './' && !href.endsWith('/')) {
+                        const cleanName = decodeURIComponent(href.split('/').pop());
+                        if (cleanName) gameFiles.push(cleanName);
+                    }
+                });
+
+                if (gameFiles.length === 0) {
+                    gameFiles = ['Pacman.html', 'Tetris.html', 'Snake.html', 'Pong.html'];
+                }
+
+                renderGames(gameFiles);
+
+            } catch (err) {
+                console.warn('Directory indexing failed or restricted. Using fallback configuration.', err);
+                
+                const fallbackGames = ['CyberRunner.html', 'SpaceInvaders.html', 'TicTacToe.html'];
+                renderGames(fallbackGames);
+            }
+        }
+
+        function renderGames(files) {
+            const gridContainer = document.getElementById('game-grid');
+            gridContainer.innerHTML = '';
+
+            files.forEach(file => {
+                const displayName = file.replace(/\.[^/.]+$/, "");
+                const firstLetter = displayName.charAt(0);
+
+                const targetUrl = `${BASE_WEBSITE_URL}/games/${file}`;
+
+                const card = document.createElement('a');
+                card.className = 'game-card';
+                card.href = targetUrl;
+
+                card.innerHTML = `
+                    <div class="game-logo">${firstLetter}</div>
+                    <div class="game-name">${displayName}</div>
+                `;
+
+                gridContainer.appendChild(card);
+            });
+        }
+
+        loadGames();
+    </script>
+</body>
+</html>
